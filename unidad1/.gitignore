@@ -22,3 +22,5 @@ env/
 *.egg-info/
 build/
 dist/
+
+CLAUDE.md
