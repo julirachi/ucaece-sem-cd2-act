@@ -20,7 +20,7 @@ La interpretación completa está en [`evidencias.md`](evidencias.md) y la captu
 
 ## Cómo reproducirlo
 
-Desde un Codespace con la configuración `unidad2-seminario-cd2`, parado en `unidad2/`:
+Desde un Codespace con la configuración `unidad2-seminario-cd2`, parado en `unidad2/`. Antes de cargar el dataset validé el entorno corriendo la demo de la plantilla tal cual viene (paso 3.4 de la guía, dataset Adult Income): exactitud 0.856 del modelo base y 0.839 con ExponentiatedGradient, sin errores.
 
 ```bash
 # 1. Descargar el dataset (copia idéntica del archivo de Kaggle, sin login)
@@ -44,7 +44,10 @@ EOF2
 python -m src.main
 ```
 
-Nota: ExponentiatedGradient y ThresholdOptimizer son aleatorizados, así que las métricas mitigadas pueden variar levemente entre corridas.
+Notas:
+
+- ExponentiatedGradient y ThresholdOptimizer son aleatorizados, así que las métricas mitigadas pueden variar levemente entre corridas.
+- El dataset es sintético: sirve para reproducir el mecanismo del caso de Amazon, no para estimar el sesgo del sistema real (cuyos datos nunca se publicaron).
 
 ---
 
