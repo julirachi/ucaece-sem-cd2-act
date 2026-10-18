@@ -49,7 +49,7 @@ genera:
   SHAP y un resumen global), listos para pegar en tu informe.
 
 Revisá esos dos artefactos para entender qué genera cada corrida — es exactamente lo que
-vas a interpretar con tu propio dataset en el paso 4.
+vas a interpretar con tu propio dataset en el paso 6.
 
 ## 3. Configurar tu propio dataset (consigna 8.a)
 
@@ -73,7 +73,54 @@ vas a interpretar con tu propio dataset en el paso 4.
    `POSITIVE_LABEL` es el valor de `TARGET_COLUMN` que el modelo intenta predecir como
    "positivo" (ej. `"Sí"`, `"1"`, `">50K"`, `"aprobado"`).
 
-## 4. Elegir la técnica de mitigación y la restricción de equidad (consigna 9.a)
+## 4. Si tu CSV viene "crudo": limpieza rápida (ETL) antes de correrlo
+
+Muchos datasets públicos (por ejemplo, el de [COMPAS](https://github.com/propublica/compas-analysis)
+que suele usarse para casos de sesgo racial en sistemas judiciales) vienen con decenas de
+columnas que no deberías usar tal cual: identificadores, texto libre, fechas, o columnas que
+directamente filtran el resultado que el modelo tiene que predecir (*data leakage*). El
+pipeline no adivina cuáles son: como pide RF-01, acepta cualquier CSV y entrena usando
+**todas** las columnas salvo la que configures como `TARGET_COLUMN`. Elegir qué columnas
+tienen sentido como *features* es trabajo de preparación de datos, igual que elegir el
+dataset en el paso 3.
+
+**Señales de que tu CSV necesita este paso:**
+
+- **La exactitud del modelo base te da sospechosamente alta** (ej. > 0.95) en un problema
+  que no debería ser tan fácil de predecir → probablemente alguna columna "filtra" la
+  respuesta (contiene información que solo se conocería después de tener el resultado real).
+- **La ejecución se cuelga o tarda muchísimo** sin terminar → probablemente hay columnas de
+  texto libre o identificadores casi únicos por fila (nombres, IDs, fechas) que el
+  `OneHotEncoder` expande en miles de columnas nuevas, disparando el tiempo de entrenamiento.
+- **Advertencia de sklearn** `Skipping features without any observed values` → hay una
+  columna enteramente vacía; no rompe la corrida, pero es señal de que el CSV no está curado.
+
+**Solución:** quedate solo con las columnas que tengan sentido como features predictoras más
+tu columna objetivo. Ejemplo real (el que se usó para llegar a una exactitud realista con el
+dataset COMPAS, filtrando primero registros inválidos según el criterio del propio análisis
+de ProPublica, y descartando columnas que filtran el resultado como `is_recid` o `event`):
+
+```bash
+python -c "
+import pandas as pd
+
+df = pd.read_csv('data/tu_dataset_crudo.csv')
+
+# Filtros de calidad específicos del dataset (ajustá o quitá según el tuyo)
+# df = df[df['alguna_columna_de_control'] != 'valor_invalido']
+
+columnas = ['columna_a', 'columna_b', 'tu_atributo_sensible', 'tu_columna_objetivo']
+df = df[columnas].dropna()
+df.to_csv('data/tu_dataset_limpio.csv', index=False)
+print(df.shape)
+"
+```
+
+Después, apuntá `DATASET_PATH` en tu `.env` al CSV limpio (`data/tu_dataset_limpio.csv`) y
+volvé a correr `python -m src.main`. Una exactitud que baja a un rango más razonable (ni
+sospechosamente perfecta ni al nivel del azar) es la señal de que la limpieza funcionó.
+
+## 5. Elegir la técnica de mitigación y la restricción de equidad (consigna 9.a)
 
 En el mismo `.env`, elegís cómo mitigar el sesgo sin tocar código:
 
@@ -93,7 +140,7 @@ FAIRNESS_CONSTRAINT=demographic_parity
 | `demographic_parity` | Busca que la tasa de selección (predicciones positivas) sea similar entre grupos. |
 | `equalized_odds` | Busca que la tasa de verdaderos/falsos positivos sea similar entre grupos — más exigente. |
 
-## 5. Ejecutar y generar tus evidencias (consignas 8, 9 y 10)
+## 6. Ejecutar y generar tus evidencias (consignas 8, 9 y 10)
 
 ```bash
 python -m src.main
@@ -121,7 +168,7 @@ En [`src/fairness_audit.py`](src/fairness_audit.py) hay un único lugar marcado
 `fairlearn.metrics` (ej. `equalized_odds_ratio`) si querés enriquecer la comparación. Es
 completamente opcional: el resto del pipeline funciona igual sin tocarlo.
 
-## 6. Errores comunes
+## 7. Errores comunes
 
 - `No se encontró el archivo '...' (DATASET_PATH)` → revisá que el CSV esté efectivamente
   en `data/` y que la ruta en `.env` sea correcta.
@@ -132,8 +179,11 @@ completamente opcional: el resto del pipeline funciona igual sin tocarlo.
   columna objetivo (revisá mayúsculas/espacios).
 - `MITIGATION_METHOD='...' no es válido` / `FAIRNESS_CONSTRAINT='...' no es válida` → usá
   exactamente uno de los valores listados en el mensaje de error.
+- **La corrida no termina nunca, o la exactitud te da sospechosamente alta (> 0.95)** → tu
+  CSV probablemente tiene columnas de texto libre/IDs o columnas que filtran el resultado.
+  Ver la sección 4 (limpieza rápida / ETL) antes de seguir.
 
-## 7. Registrar y entregar (consigna 11)
+## 8. Registrar y entregar (consigna 11)
 
 1. Commiteá tu código (si hiciste el ajuste opcional), `evidencias.md` y los PNG de
    `outputs/`.
