@@ -1,3 +1,53 @@
+# Entrega Unidad 2 — Julian Rachitzky
+
+**Caso analizado:** herramienta de reclutamiento automatizado de Amazon, discontinuada por penalizar a candidatas mujeres (Dastin, 2018).
+
+**Dataset:** [Utrecht Fairness Recruitment dataset](https://www.kaggle.com/datasets/ictinstitute/utrecht-fairness-recruitment-dataset) (ICT Institute, CC BY-SA 4.0; Burda & Van Otterloo, 2025), archivo `recruitmentdataset-2022-1.3.csv`. Es un dataset sintético y tabular de 4.000 candidatos a cuatro empresas. Uso solo la **empresa B** (981 candidatos tras excluir la categoría `other`, que tiene 19 casos), porque es la que reproduce el patrón de Amazon: las mujeres tienen mejor nota y más experiencia en programación, pero fueron contratadas en el 14,0% de los casos contra el 45,5% de los hombres.
+
+**Atributo sensible:** `gender` (female / male). **Objetivo:** `decision` (clase positiva `True` = contratado). **Modelo:** regresión logística base de la plantilla.
+
+## Resultados (corrida final, `MITIGATION_METHOD=ambos`, `FAIRNESS_CONSTRAINT=demographic_parity`)
+
+| Escenario | Exactitud | Demographic parity diff. | Equalized odds diff. |
+|---|---|---|---|
+| Modelo base (sin mitigar) | 0.881 | 0.313 | 0.345 |
+| ExponentiatedGradient | 0.803 | 0.007 | 0.427 |
+| ThresholdOptimizer | 0.793 | 0.044 | 0.477 |
+
+Corrida complementaria con `FAIRNESS_CONSTRAINT=equalized_odds` (en `outputs/corrida_equalized_odds/`): ExponentiatedGradient 0.858 / 0.201 / 0.054 y ThresholdOptimizer 0.861 / 0.186 / 0.076.
+
+La interpretación completa está en [`evidencias.md`](evidencias.md) y la captura de la ejecución en [`outputs/captura_ejecucion.png`](outputs/captura_ejecucion.png).
+
+## Cómo reproducirlo
+
+Desde un Codespace con la configuración `unidad2-seminario-cd2`, parado en `unidad2/`:
+
+```bash
+# 1. Descargar el dataset (copia idéntica del archivo de Kaggle, sin login)
+curl -sSL -o data/recruitmentdataset-2022-1.3.csv \
+  https://raw.githubusercontent.com/daniel-filius/utrecht-fairness-dataset/main/recruitmentdataset-2022-1.3.csv
+
+# 2. Limpieza: filtra la empresa B y los géneros female/male, descarta Id y company
+python preparar_dataset.py
+
+# 3. Configurar el entorno
+cat > .env <<'EOF2'
+DATASET_PATH=data/empresa_b_limpio.csv
+TARGET_COLUMN=decision
+SENSITIVE_ATTRIBUTE=gender
+POSITIVE_LABEL=True
+MITIGATION_METHOD=ambos
+FAIRNESS_CONSTRAINT=demographic_parity
+EOF2
+
+# 4. Ejecutar
+python -m src.main
+```
+
+Nota: ExponentiatedGradient y ThresholdOptimizer son aleatorizados, así que las métricas mitigadas pueden variar levemente entre corridas.
+
+---
+
 # Unidad 2 — Calidad, Seguridad y Mejores Prácticas: auditoría de equidad
 
 Plantilla base para el componente práctico (consignas 7 a 11) del Análisis de Caso
