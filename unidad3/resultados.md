@@ -25,7 +25,7 @@
 
 ![Modelo registrado](capturas/7_registro.png)
 
-> Con max_depth=1 el árbol hace una sola pregunta y solo puede separar setosa del resto, por eso la accuracy queda en 0.667 y el f1 en 0.556. Con 3 llega a 0.978 y con 4 baja a 0.889: más profundidad no siempre generaliza mejor, se empieza a ajustar demasiado al train. Por eso conviene registrar todas las corridas, también las malas: queda documentado qué se probó y con qué resultado, se puede comparar contra la que está en producción y nadie repite una prueba que ya falló. Es lo mismo que pedí en la consigna 2 con MLflow para las versiones del prompt de CuotaYa.
+> Con max_depth=1 el árbol hace una sola pregunta y solo puede separar setosa del resto, por eso la accuracy queda en 0.667 y el f1 en 0.556. Con 3 llega a 0.978 y con 4 baja a 0.889: más profundidad no siempre generaliza mejor, se empieza a ajustar demasiado al train. Por eso conviene registrar todas las corridas, también las malas: queda documentado qué se probó y con qué resultado, se puede comparar contra la que está en producción y nadie repite una prueba que ya falló. Es lo mismo que propuse en la consigna 2 con MLflow para las versiones del prompt de CuotaYa.
 
 ---
 
